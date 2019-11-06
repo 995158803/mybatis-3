@@ -28,8 +28,11 @@ import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
+//参数名称解析器
 public class ParamNameResolver {
 
+
+  //通用名称前缀
   private static final String GENERIC_NAME_PREFIX = "param";
 
   /**
@@ -45,23 +48,25 @@ public class ParamNameResolver {
    * <li>aMethod(int a, RowBounds rb, int b) -&gt; {{0, "0"}, {2, "1"}}</li>
    * </ul>
    */
+  //参数顺序，，参数名字
   private final SortedMap<Integer, String> names;
 
+  //是否有param注解
   private boolean hasParamAnnotation;
 
   public ParamNameResolver(Configuration config, Method method) {
     final Class<?>[] paramTypes = method.getParameterTypes();
     final Annotation[][] paramAnnotations = method.getParameterAnnotations();
     final SortedMap<Integer, String> map = new TreeMap<>();
-    int paramCount = paramAnnotations.length;
+    int paramCount = paramAnnotations.length; //注解数量
     // get names from @Param annotations
     for (int paramIndex = 0; paramIndex < paramCount; paramIndex++) {
-      if (isSpecialParameter(paramTypes[paramIndex])) {
+      if (isSpecialParameter(paramTypes[paramIndex])) { //忽略 如果是特殊参数
         // skip special parameters
         continue;
       }
       String name = null;
-      for (Annotation annotation : paramAnnotations[paramIndex]) {
+      for (Annotation annotation : paramAnnotations[paramIndex]) {//首先从@param 中获取参数
         if (annotation instanceof Param) {
           hasParamAnnotation = true;
           name = ((Param) annotation).value();
@@ -71,7 +76,7 @@ public class ParamNameResolver {
       if (name == null) {
         // @Param was not specified.
         if (config.isUseActualParamName()) {
-          name = getActualParamName(method, paramIndex);
+          name = getActualParamName(method, paramIndex);// 获取真实的参数名字
         }
         if (name == null) {
           // use the parameter index as the name ("0", "1", ...)
@@ -104,14 +109,14 @@ public class ParamNameResolver {
    * A single non-special parameter is returned without a name.
    * Multiple parameters are named using the naming rule.
    * In addition to the default names, this method also adds the generic names (param1, param2,
-   * ...).
+   * ...).获取参数名字与值的映射
    * </p>
    */
   public Object getNamedParams(Object[] args) {
     final int paramCount = names.size();
     if (args == null || paramCount == 0) {
       return null;
-    } else if (!hasParamAnnotation && paramCount == 1) {
+    } else if (!hasParamAnnotation && paramCount == 1) { //只有一个非注解参数 直接返回首元素
       return args[names.firstKey()];
     } else {
       final Map<String, Object> param = new ParamMap<>();
